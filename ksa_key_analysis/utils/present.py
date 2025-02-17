@@ -32,8 +32,8 @@ def generate_round_keys(master_key):
 
 	for i in range(32):
 		round_keys.append(key >> 16)  # Берём старшие 64 бита
-		key = ((key & 0xFFFF) << 61) | (key >> 19)  # Циклический сдвиг влево на 61
-		key = (SBOX[(key >> 76) & 0xF] << 76) | (key & 0x0FFFFFFFFFFFFFFF)
+		key = ((key & 0x7FFFF) << 61) | (key >> 19)  # Циклический сдвиг влево на 61
+		key = (SBOX[(key >> 76) & 0xF] << 76) | (key & 0x0FFFFFFFFFFFFFFFFFFF)
 		key ^= i << 15  # XOR с номером раунда
 	return round_keys
 
@@ -45,7 +45,7 @@ def present_encrypt(plaintext, round_keys):
 		state ^= round_keys[i]  # XOR с раундовым ключом
 		state = substitute(state)  # S-блоки
 		state = permute(state)  # P-блоки
-		state ^= round_keys[-1]  # Финальный раундовый ключ
+		state ^= round_keys[31]  # Финальный раундовый ключ
 	return state
 
 # Замена байтов через S-блоки
@@ -65,33 +65,44 @@ def permute(state):
 			new_state |= 1 << PBOX[i]
 	return new_state
 
+def generate_ksa_data(num_samples=100):
+	keys = np.zeros((num_samples, ), dtype=np.object_)
+	round_keys = np.zeros((num_samples, 32), dtype=np.uint64)
+
+	for i in range(num_samples):
+		master_key = int.from_bytes(np.random.bytes(10), "big")
+		rk = generate_round_keys(master_key)
+
+		keys[i] = master_key
+		round_keys[i] = np.array(rk, dtype=np.uint64)
+	return keys, round_keys
 # Функция генерации данных для анализа
-def generate_ksa_data():
-	"""Генерация случайных данных для анализа ключей и раундовых ключей."""
-	num_rounds = 32  # Количество раундов для PRESENT
-	key_length = 80  # Длина ключа
-	data_length = 64  # Длина данных для шифрования
-
-	# Генерация случайного мастер-ключа
-	master_key = np.random.randint(0, 2**key_length, dtype=np.uint64)
-
-	# Генерация раундовых ключей из мастер-ключа
-	round_keys = generate_round_keys(master_key)
-
-	# Генерация случайного блока данных для шифрования
-	plaintext = np.random.randint(0, 2**data_length, dtype=np.uint64)
-
-	# Шифрование блока данных
-	ciphertext = present_encrypt(plaintext, round_keys)
-
-	# Сохранение сгенерированных данных в файлы
-	np.save('keys.npy', master_key)
-	np.save('round_keys.npy', round_keys)
-	np.save('plaintext.npy', plaintext)
-	np.save('ciphertext.npy', ciphertext)
-
-	print("Keys, round keys, plaintext, and ciphertext generated and saved.")
+#def generate_ksa_data():
+#	Генерация случайных данных для анализа ключей и раундовых ключей.
+#	num_rounds = 32  # Количество раундов для PRESENT
+#	key_length = 80  # Длина ключа
+#	data_length = 64  # Длина данных для шифрования
+#
+#	# Генерация случайного мастер-ключа
+#	master_key = np.random.randint(0, 2**key_length, dtype=np.object_)
+#
+#	# Генерация раундовых ключей из мастер-ключа
+#	round_keys = generate_round_keys(master_key)
+#
+#	# Генерация случайного блока данных для шифрования
+#	plaintext = np.random.randint(0, 2**data_length, dtype=np.uint64)
+#
+#	# Шифрование блока данных
+#	ciphertext = present_encrypt(plaintext, round_keys)
+#
+#	# Сохранение сгенерированных данных в файлы
+#	np.save('keys.npy', master_key)
+#	np.save('round_keys.npy', round_keys)
+#	np.save('plaintext.npy', plaintext)
+#	np.save('ciphertext.npy', ciphertext)
+#
+#	print("Keys, round keys, plaintext, and ciphertext generated and saved.")
     
 # Если скрипт запускается напрямую, то выполняется генерация данных
-if name == "__main__":
+if __name__ == "__main__":
 	generate_ksa_data()

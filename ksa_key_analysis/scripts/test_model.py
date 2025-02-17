@@ -5,12 +5,12 @@ data_dir = "data/"
 results_dir = "results/"
 
 # Загрузка данных
-keys = np.load(f"{data_dir}/keys.npy")
-round_keys = np.load(f"{data_dir}/round_keys.npy")
+keys = np.load(f"{data_dir}/keys.npz")
+round_keys = np.load(f"{data_dir}/round_keys.npz")
 
 # Нормализация данных
-round_keys = round_keys / (2**64 - 1)
-keys = keys / (2**80 - 1)
+round_keys = round_keys.astype(np.float32) / (2**64 - 1)
+keys = keys.astype(np.float32) / (2**80 - 1)
 
 # Загрузка модели
 model = load_model(f"{results_dir}/model_weights.h5")

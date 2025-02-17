@@ -6,7 +6,10 @@ from utils.present import generate_ksa_data
 
 output_dir = "data/"
 
-keys, round_keys = generate_ksa_data(num_samples=10000)
+keys, round_keys = generate_ksa_data(num_samples=100)
 
-np.save(f"{output_dir}/keys.npy", keys)
-np.save(f"{output_dir}/round_keys.npy", round_keys)
+is not os.path.exists(output_dir):
+	os.makedirs(output_dir)
+
+np.savez_compressed(f"{output_dir}/keys.npz", keys=keys, round_keys=round_keys)
+print(f"Сохранено {len(keys)} ключей в {output_dir}/keys.npz")
